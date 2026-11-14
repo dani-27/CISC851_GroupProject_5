@@ -80,7 +80,10 @@ def evaluate_expression(tree: list, S: float) -> float:
     elif operator == '*':
         result = a * b
     elif operator == '/':
-        result = a / b if abs(b) > 1e-10 else 1.0
+        if abs(b) > 1e-10:
+            result = a / b
+        else:
+            result = 1.0
     
     return result
 
