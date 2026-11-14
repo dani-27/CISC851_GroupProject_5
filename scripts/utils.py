@@ -156,7 +156,7 @@ def generate_tree(current_depth, max_depth, method):
 
 def initialize_population(population_size: int, max_tree_depth: int) -> list:
     """
-    Initialize a population using Ramped Half-and-Half.
+    Purpose: initialize a population using ramped half-and-half.
 
     Parameters:
         population_size (int): Number of trees to generate.
@@ -166,11 +166,13 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
         population (list): List of randomly generated expression trees.
     """
 
+    # Prevent invalid tree depth.
     if max_tree_depth < 2:
         raise ValueError("Maximum tree depth must be at least 2.")
 
     population = []
 
+    # Generate trees using ramped half-and-half.
     for i in range(population_size):
 
         # Alternate between Full and Grow.
@@ -190,6 +192,24 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
 # ---------------------------------------------------------------------------------------------------
 # Testing
 
-test_result = evaluate_expression(tree = sample_tree, S = 1)
-print(print_tree(tree = sample_tree))
-print(test_result)
+def main():
+    """
+    Purpose: test the helper functions.
+    """
+
+    # Test print_tree and evaluate_expression.
+    # test_result = evaluate_expression(tree = sample_tree, S = 1)
+    # print(print_tree(tree = sample_tree))
+    # print(test_result)
+    
+    # Test population initialization.
+    population = initialize_population(
+        population_size = 300,
+        max_tree_depth = 6
+    )
+    # Display the first five individuals.
+    for i, tree in enumerate(population[:5]):
+        print(f"Individual {i + 1}: {print_tree(tree)}")
+
+if __name__ == "__main__":
+    main()
