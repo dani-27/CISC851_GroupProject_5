@@ -333,6 +333,75 @@ def subtree_crossover(
     # Return unchanged parents if all crossover attempts fail.
     return copy.deepcopy(parent1), copy.deepcopy(parent2)
 
+def test_subtree_crossover():
+    """
+    Test the correctness of depth-aware subtree crossover.
+    """
+
+    random.seed(42)
+
+    parent1 = ['/', 'S', ['+', 'S', 3.0]]
+    parent2 = ['/', ['*', 200.0, 'S'], ['+', 'S', 0.1]]
+
+    original1 = copy.deepcopy(parent1)
+    original2 = copy.deepcopy(parent2)
+
+    # Test 1: No crossover when probability is zero.
+    child1, child2 = subtree_crossover(
+        parent1, parent2, crossover_probability=0.0
+    )
+
+    assert child1 == parent1
+    assert child2 == parent2
+
+    print("Test 1 passed: Zero crossover probability.")
+
+    # Test 2: Perform multiple crossover attempts.
+    successful_changes = 0
+
+    for i in range(100):
+        child1, child2 = subtree_crossover(
+            parent1,
+            parent2,
+            crossover_probability=1.0,
+            max_tree_depth=6,
+            max_attempts=10
+        )
+
+        # Verify that original parents remain unchanged.
+        assert parent1 == original1
+        assert parent2 == original2
+
+        # Verify that offspring remain expression trees.
+        assert isinstance(child1, list)
+        assert isinstance(child2, list)
+
+        # Verify that tree depths do not exceed the limit.
+        assert tree_depth(child1) <= 6
+        assert tree_depth(child2) <= 6
+
+        # Count crossover events that introduce variation.
+        if child1 != parent1 or child2 != parent2:
+            successful_changes += 1
+
+        # Display the first five crossover attempts.
+        if i < 5:
+            print(f"\nAttempt {i + 1}")
+            print("Offspring 1:", print_tree(child1))
+            print("Offspring 2:", print_tree(child2))
+
+    print("\nTest 2 passed: Offspring satisfy constraints.")
+    print(f"Variation introduced: {successful_changes}/100")
+
+    # Test 3: Verify crossover introduces variation.
+    assert successful_changes > 0
+
+    print("Test 3 passed: Crossover introduces variation.")
+    print("\nAll tests passed!")
+
+# ---------------------------------------------------------------------------------------------------
+# Mutation Functions
+
 # ---------------------------------------------------------------------------------------------------
 # Testing
 
@@ -354,6 +423,9 @@ def main():
     # Display the first five individuals.
     for i, tree in enumerate(population[:5]):
         print(f"Individual {i + 1}: {print_tree(tree)}")
+    
+    # Test subtree crossover.
+    test_subtree_crossover()
 
 if __name__ == "__main__":
     main()
