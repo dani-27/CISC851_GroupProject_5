@@ -13,9 +13,10 @@
 import pandas as pd
 import numpy as np
 import random
+import copy
 
 # ---------------------------------------------------------------------------------------------------
-# Helper Functions
+# Global Variables
 
 operations = ['+', '-', '*', '/']
 
@@ -24,6 +25,9 @@ sample_tree = [
     ['*', 2.0, 'S'],
     ['+', 3.0, 'S']
 ]
+
+# ---------------------------------------------------------------------------------------------------
+# Print Trees
 
 def print_tree(tree: list) -> str:
     """
@@ -52,6 +56,9 @@ def print_tree(tree: list) -> str:
     tree_string = f"({left_expr} {operator} {right_expr})"
 
     return tree_string
+
+# ---------------------------------------------------------------------------------------------------
+# Evaluation Functions
 
 def evaluate_expression(tree: list, S: float) -> float:
     """
@@ -117,7 +124,10 @@ def evaluate_tree(tree: list) -> float:
 
     return mse
 
-def random_terminal():
+# ---------------------------------------------------------------------------------------------------
+# Initialization Functions
+
+def random_terminal() -> str | float:
     """
     Purpose: generate a random terminal node.
     - 50% chance of returning 'S'.
@@ -132,9 +142,17 @@ def random_terminal():
     else:
         return round(random.uniform(-250, 250), 3)
 
-def generate_tree(current_depth, max_depth, method):
+def generate_tree(current_depth: int, max_depth: int, method: str) -> list:
     """
-    Generate a random expression tree using Full or Grow.
+    Purpose: generate a random expression tree using Full or Grow.
+    
+    Args:
+        current_depth (int): Current depth of the recursive function in the tree.
+        max_depth (int): Maximum depth of the tree.
+        method (str): 'full' or 'grow' method for tree generation.
+
+    Outputs:
+        tree (list): A randomly generated expression tree.
     """
 
     # Terminal node at maximum depth.
@@ -190,6 +208,117 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
     return population
 
 # ---------------------------------------------------------------------------------------------------
+# Recombination Functions
+
+def get_node_paths(tree: list, path: tuple[int, ...] = ()) -> list[tuple[int, ...]]:
+    """
+    Purpose: recursively traverse a tree and return a list of all paths from the root to each node.
+    
+    Args:
+        tree (list): A nested list representing an equation.
+        path (tuple): A tuple of integers describing how to reach the current node from the root. Default is an empty tuple (root node).
+    
+    Outputs:
+        paths (list): A list of tuples, each tuple representing a path to a node in the tree.
+    """
+    
+    paths = [path]
+
+    # 1 indicates left child, 2 indicates right child.
+    if isinstance(tree, list):
+        paths += get_node_paths(tree[1], path + (1,))
+        paths += get_node_paths(tree[2], path + (2,))
+
+    return paths
+
+def tree_depth(tree: list) -> int:
+    """
+    Purpose: calculate the maximum depth of an expression tree.
+
+    Args:
+        tree (list): A nested list representing an equation.
+
+    Outputs:
+        depth (int): The maximum depth of the tree.
+    """
+
+    # Terminal node.
+    if not isinstance(tree, list):
+        depth = 1
+
+    # Internal node.
+    else:
+        left_depth = tree_depth(tree[1])
+        right_depth = tree_depth(tree[2])
+
+        depth = 1 + max(left_depth, right_depth)
+
+    return depth
+
+def subtree_crossover(
+    parent1: list,
+    parent2: list,
+    crossover_probability: float,
+    max_tree_depth: int = 6
+) -> tuple:
+    """
+    Purpose: perform standard subtree crossover between two parents.
+
+    Args:
+        parent1 (list): First parent expression tree.
+        parent2 (list): Second parent expression tree.
+        crossover_probability (float): Probability of crossover.
+        max_tree_depth (int): Maximum permitted tree depth.
+
+    Outputs:
+        tuple: Two offspring expression trees.
+    """
+
+    offspring1 = copy.deepcopy(parent1)
+    offspring2 = copy.deepcopy(parent2)
+
+    # Determine whether crossover occurs.
+    if random.random() >= crossover_probability:
+        return offspring1, offspring2
+
+    # Select random crossover points.
+    path1 = random.choice(get_node_paths(offspring1))
+    path2 = random.choice(get_node_paths(offspring2))
+
+    # Retrieve the selected subtrees.
+    subtree1 = offspring1
+    for index in path1:
+        subtree1 = subtree1[index]
+
+    subtree2 = offspring2
+    for index in path2:
+        subtree2 = subtree2[index]
+
+    # Exchange subtrees.
+    if not path1:
+        offspring1 = copy.deepcopy(subtree2)
+    else:
+        node = offspring1
+        for index in path1[:-1]:
+            node = node[index]
+        node[path1[-1]] = copy.deepcopy(subtree2)
+
+    if not path2:
+        offspring2 = copy.deepcopy(subtree1)
+    else:
+        node = offspring2
+        for index in path2[:-1]:
+            node = node[index]
+        node[path2[-1]] = copy.deepcopy(subtree1)
+
+    # Reject crossover if either offspring exceeds maximum depth.
+    if (tree_depth(offspring1) > max_tree_depth or
+            tree_depth(offspring2) > max_tree_depth):
+        return copy.deepcopy(parent1), copy.deepcopy(parent2)
+
+    return offspring1, offspring2
+
+# ---------------------------------------------------------------------------------------------------
 # Testing
 
 def main():
@@ -198,9 +327,9 @@ def main():
     """
 
     # Test print_tree and evaluate_expression.
-    # test_result = evaluate_expression(tree = sample_tree, S = 1)
-    # print(print_tree(tree = sample_tree))
-    # print(test_result)
+    test_result = evaluate_expression(tree = sample_tree, S = 1)
+    print(print_tree(tree = sample_tree))
+    print(test_result)
     
     # Test population initialization.
     population = initialize_population(
