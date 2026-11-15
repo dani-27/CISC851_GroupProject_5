@@ -142,21 +142,21 @@ def random_terminal() -> str | float:
     else:
         return round(random.uniform(-250, 250), 3)
 
-def generate_tree(current_depth: int, max_depth: int, method: str) -> list:
+def generate_tree(current_depth: int, method: str, max_tree_depth: int = 6) -> list | str | float:
     """
     Purpose: generate a random expression tree using Full or Grow.
     
     Args:
-        current_depth (int): Current depth of the recursive function in the tree.
-        max_depth (int): Maximum depth of the tree.
+        current_depth (int): Current depth of the node being generated.
+        max_tree_depth (int): Maximum permitted tree depth.
         method (str): 'full' or 'grow' method for tree generation.
 
     Outputs:
-        tree (list): A randomly generated expression tree.
+        tree (list | str | float): A randomly generated expression tree.
     """
 
     # Terminal node at maximum depth.
-    if current_depth == max_depth:
+    if current_depth == max_tree_depth:
         return random_terminal()
 
     # Grow method: allow branches to terminate early.
@@ -167,8 +167,8 @@ def generate_tree(current_depth: int, max_depth: int, method: str) -> list:
     # Generate an operator and its two children.
     operator = random.choice(operations)
 
-    left = generate_tree(current_depth + 1, max_depth, method)
-    right = generate_tree(current_depth + 1, max_depth, method)
+    left = generate_tree(current_depth + 1, method, max_tree_depth)
+    right = generate_tree(current_depth + 1, method, max_tree_depth)
 
     return [operator, left, right]
 
@@ -176,7 +176,7 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
     """
     Purpose: initialize a population using ramped half-and-half.
 
-    Parameters:
+    Args:
         population_size (int): Number of trees to generate.
         max_tree_depth (int): Maximum permitted initial tree depth.
 
@@ -184,6 +184,10 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
         population (list): List of randomly generated expression trees.
     """
 
+    # Prevent invalid population size.
+    if population_size < 1:
+        raise ValueError("Population size must be at least 1.")
+    
     # Prevent invalid tree depth.
     if max_tree_depth < 2:
         raise ValueError("Maximum tree depth must be at least 2.")
@@ -199,7 +203,7 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
         # Cycle through depths from 2 to max_tree_depth.
         depth = 2 + (i // 2) % (max_tree_depth - 1)
 
-        tree = generate_tree(1, depth, method)
+        tree = generate_tree(current_depth = 1, method = method, max_tree_depth = depth)
 
         population.append(tree)
 
@@ -259,21 +263,24 @@ def subtree_crossover(
     parent1: list,
     parent2: list,
     crossover_probability: float,
-    max_tree_depth: int = 6
+    max_tree_depth: int = 6,
+    max_attempts: int = 10
 ) -> tuple:
     """
-    Purpose: perform standard subtree crossover between two parents.
+    Purpose: perform depth-aware subtree crossover between two parent trees.
 
     Args:
         parent1 (list): First parent expression tree.
         parent2 (list): Second parent expression tree.
         crossover_probability (float): Probability of crossover.
-        max_tree_depth (int): Maximum permitted tree depth.
+        max_tree_depth (int): Maximum permitted offspring depth.
+        max_attempts (int): Maximum number of crossover attempts.
 
     Outputs:
         tuple: Two offspring expression trees.
     """
 
+    # Create independent copies of the parents.
     offspring1 = copy.deepcopy(parent1)
     offspring2 = copy.deepcopy(parent2)
 
@@ -281,42 +288,50 @@ def subtree_crossover(
     if random.random() >= crossover_probability:
         return offspring1, offspring2
 
-    # Select random crossover points.
-    path1 = random.choice(get_node_paths(offspring1))
-    path2 = random.choice(get_node_paths(offspring2))
+    # Identify possible crossover points (excluding the root).
+    paths1 = get_node_paths(parent1)[1:]
+    paths2 = get_node_paths(parent2)[1:]
 
-    # Retrieve the selected subtrees.
-    subtree1 = offspring1
-    for index in path1:
-        subtree1 = subtree1[index]
+    # Retry crossover until valid offspring are produced.
+    for _ in range(max_attempts):
 
-    subtree2 = offspring2
-    for index in path2:
-        subtree2 = subtree2[index]
+        # Select random crossover points.
+        path1 = random.choice(paths1)
+        path2 = random.choice(paths2)
 
-    # Exchange subtrees.
-    if not path1:
-        offspring1 = copy.deepcopy(subtree2)
-    else:
+        # Retrieve selected subtrees.
+        subtree1 = parent1
+        for index in path1:
+            subtree1 = subtree1[index]
+
+        subtree2 = parent2
+        for index in path2:
+            subtree2 = subtree2[index]
+
+        # Check whether crossover would exceed maximum depth.
+        if (len(path1) + tree_depth(subtree2) > max_tree_depth or len(path2) + tree_depth(subtree1) > max_tree_depth):
+            continue
+
+        # Create fresh copies for the valid crossover.
+        offspring1 = copy.deepcopy(parent1)
+        offspring2 = copy.deepcopy(parent2)
+
+        # Replace selected subtree in offspring 1.
         node = offspring1
         for index in path1[:-1]:
             node = node[index]
         node[path1[-1]] = copy.deepcopy(subtree2)
 
-    if not path2:
-        offspring2 = copy.deepcopy(subtree1)
-    else:
+        # Replace selected subtree in offspring 2.
         node = offspring2
         for index in path2[:-1]:
             node = node[index]
         node[path2[-1]] = copy.deepcopy(subtree1)
 
-    # Reject crossover if either offspring exceeds maximum depth.
-    if (tree_depth(offspring1) > max_tree_depth or
-            tree_depth(offspring2) > max_tree_depth):
-        return copy.deepcopy(parent1), copy.deepcopy(parent2)
+        return offspring1, offspring2
 
-    return offspring1, offspring2
+    # Return unchanged parents if all crossover attempts fail.
+    return copy.deepcopy(parent1), copy.deepcopy(parent2)
 
 # ---------------------------------------------------------------------------------------------------
 # Testing
