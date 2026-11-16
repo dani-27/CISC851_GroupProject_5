@@ -335,7 +335,7 @@ def subtree_crossover(
 
 def test_subtree_crossover():
     """
-    Test the correctness of depth-aware subtree crossover.
+    Purpose: test the correctness of depth-aware subtree crossover.
     """
 
     random.seed(42)
@@ -457,6 +457,34 @@ def subtree_mutation(
 
     return offspring
 
+def test_subtree_mutation():
+    """
+    Purpose: test the correctness of depth-aware subtree mutation.
+    """
+    
+    parent = ['/', ['*', 200.0, 'S'], ['+', 'S', 0.1]]
+    original = copy.deepcopy(parent)
+
+    # Test mutation probability of zero.
+    child = subtree_mutation(parent, 0.0, 6)
+    assert child == parent
+
+    # Test repeated mutations.
+    changes = 0
+
+    for _ in range(100):
+        child = subtree_mutation(parent, 1.0, 6)
+
+        assert tree_depth(child) <= 6
+        assert parent == original
+        assert isinstance(child, list)
+
+        if child != parent:
+            changes += 1
+
+    print("All tests passed!")
+    print(f"Mutations producing changes: {changes}/100")
+
 # ---------------------------------------------------------------------------------------------------
 # Testing
 
@@ -481,6 +509,9 @@ def main():
     
     # Test subtree crossover.
     test_subtree_crossover()
+
+    # Test subtree mutation.
+    test_subtree_mutation()
 
 if __name__ == "__main__":
     main()
