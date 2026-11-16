@@ -402,6 +402,61 @@ def test_subtree_crossover():
 # ---------------------------------------------------------------------------------------------------
 # Mutation Functions
 
+def subtree_mutation(
+    tree: list,
+    mutation_probability: float,
+    max_tree_depth: int = 6
+) -> list:
+    """
+    Purpose: perform depth-aware subtree mutation on an expression tree.
+
+    Args:
+        tree (list): Parent expression tree.
+        mutation_probability (float): Probability of mutation.
+        max_tree_depth (int): Maximum permitted tree depth.
+
+    Outputs:
+        offspring (list): Mutated expression tree.
+    """
+
+    # Create an independent copy of the parent.
+    offspring = copy.deepcopy(tree)
+
+    # Determine whether mutation occurs.
+    if random.random() >= mutation_probability:
+        return offspring
+
+    # Select a random mutation point.
+    path = random.choice(get_node_paths(offspring))
+
+    # Determine the maximum depth available for the new subtree.
+    available_depth = max_tree_depth - len(path)
+
+    # Select the depth of the replacement subtree.
+    min_depth = 2 if not path else 1
+    new_depth = random.randint(min_depth, available_depth)
+
+    # Generate a random replacement subtree.
+    if new_depth == 1:
+        new_subtree = random_terminal()
+    else:
+        method = random.choice(['full', 'grow'])
+        new_subtree = generate_tree(1, method, new_depth)
+
+    # Replace the entire tree if the root is selected.
+    if not path:
+        offspring = new_subtree
+
+    # Otherwise, replace the selected subtree.
+    else:
+        node = offspring
+        for index in path[:-1]:
+            node = node[index]
+
+        node[path[-1]] = new_subtree
+
+    return offspring
+
 # ---------------------------------------------------------------------------------------------------
 # Testing
 
