@@ -58,7 +58,7 @@ def print_tree(tree: list) -> str:
     return tree_string
 
 # ---------------------------------------------------------------------------------------------------
-# Evaluation Functions
+# Evaluation
 
 def evaluate_expression(tree: list, S: float) -> float:
     """
@@ -125,7 +125,7 @@ def evaluate_tree(tree: list) -> float:
     return mse
 
 # ---------------------------------------------------------------------------------------------------
-# Initialization Functions
+# Initialization
 
 def random_terminal() -> str | float:
     """
@@ -212,7 +212,29 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
     return population
 
 # ---------------------------------------------------------------------------------------------------
-# Recombination Functions
+# Parent Selection
+
+def tournament_selection(population: list, tournament_size: int = 3) -> list:
+    """
+    Purpose: select a parent using tournament selection.
+
+    Args:
+        population (list): Population of expression trees.
+        tournament_size (int): Number of competing individuals.
+
+    Outputs:
+        parent (list): Individual with the lowest MSE.
+    """
+
+    candidates = random.sample(population, tournament_size)
+
+    # Use the evaluate_tree function to find the candidate with the lowest MSE.
+    parent = min(candidates, key=evaluate_tree)
+
+    return parent
+
+# ---------------------------------------------------------------------------------------------------
+# Recombination
 
 def get_node_paths(tree: list, path: tuple[int, ...] = ()) -> list[tuple[int, ...]]:
     """
@@ -484,6 +506,9 @@ def test_subtree_mutation():
 
     print("All tests passed!")
     print(f"Mutations producing changes: {changes}/100")
+
+# ---------------------------------------------------------------------------------------------------
+# Survivor Selection
 
 # ---------------------------------------------------------------------------------------------------
 # Testing
