@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------------------------------------
 # By: Ruth Carvalho, Samuel Gallo-Will, Danisa Ivanovic-Zuvic, Daniel Jeyaraj, Nabiha Naweed
-# Last Updated: November 14, 2026
+# Last Updated: November 16, 2026
 # Purpose: define helper functions.
 
 # Statement on AI
@@ -509,6 +509,33 @@ def test_subtree_mutation():
 
 # ---------------------------------------------------------------------------------------------------
 # Survivor Selection
+
+def survivor_selection(
+    population: list,
+    offspring: list,
+    elitism: int = 6
+) -> list:
+    """
+    Purpose: perform generational survivor selection with elitism.
+
+    Args:
+        population (list): Current population.
+        offspring (list): Newly generated individuals.
+        elitism (int): Number of elite individuals retained.
+
+    Outputs:
+        new_population (list): Population for the next generation.
+    """
+
+    # Select the best individuals from the current population.
+    ranked_population = sorted(population, key=evaluate_tree)
+    elites = copy.deepcopy(ranked_population[:elitism])
+
+    # Fill the remaining positions with offspring.
+    remaining = len(population) - elitism
+    new_population = elites + offspring[:remaining]
+
+    return new_population
 
 # ---------------------------------------------------------------------------------------------------
 # Testing
