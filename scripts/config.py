@@ -13,7 +13,7 @@ class GPConfig:
     
     # Population and initialization.
     population_size: int = 300
-    generations: int = 1000
+    generations: int = 500
     max_tree_depth: int = 4
     
     # Parent selection.

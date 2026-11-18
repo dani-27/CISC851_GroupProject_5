@@ -1,7 +1,9 @@
 # ---------------------------------------------------------------------------------------------------
 # By: Ruth Carvalho, Samuel Gallo-Will, Danisa Ivanovic-Zuvic, Daniel Jeyaraj, Nabiha Naweed
 # Last Updated: November 17, 2026
-# Purpose: execute the evolutionary algorithm.
+# Purpose:
+# - Execute the evolutionary algorithm.
+# - Navigate to the project directory and in terminal run: `python -m scripts.execute`
 # ---------------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------------
@@ -24,6 +26,7 @@ from scripts.utils import (
     tournament_selection,
     subtree_crossover,
     subtree_mutation,
+    constant_mutation,
     survivor_selection
 )
 
@@ -156,17 +159,28 @@ def run_gp(config: GPConfig, seed: int = 42) -> tuple:
                 config.crossover_probability + config.mutation_probability
             ):
                 
-                child1 = subtree_mutation(
-                    tree = parent1,
-                    mutation_probability = 1.0,
-                    max_tree_depth = config.max_tree_depth
-                )
-                
-                child2 = subtree_mutation(
-                    tree = parent2,
-                    mutation_probability = 1.0,
-                    max_tree_depth = config.max_tree_depth
-                )
+                if random.random() < 0.60:
+                    child1 = subtree_mutation(
+                        tree = parent1,
+                        mutation_probability = 1.0,
+                        max_tree_depth = config.max_tree_depth
+                    )
+                    child2 = subtree_mutation(
+                        tree = parent2,
+                        mutation_probability = 1.0,
+                        max_tree_depth = config.max_tree_depth
+                    )
+                else:
+                    child1 = constant_mutation(
+                        tree = parent1,
+                        mutation_probability = 1.0,
+                        max_tree_depth = config.max_tree_depth
+                    )
+                    child2 = constant_mutation(
+                        tree = parent2,
+                        mutation_probability = 1.0,
+                        max_tree_depth = config.max_tree_depth
+                    )
             
             # Direct reproduction.
             else:

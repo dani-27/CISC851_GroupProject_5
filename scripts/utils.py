@@ -511,6 +511,61 @@ def subtree_mutation(
 
     return offspring
 
+def constant_mutation(
+    tree: list,
+    mutation_probability: float,
+    max_tree_depth: int = 6
+) -> list:
+    """
+    Purpose: mutate a numerical constant within an expression tree.
+    
+    Args:
+        tree (list): Parent expression tree.
+        mutation_probability (float): Probability of mutation.
+        max_tree_depth (int): Maximum permitted offspring depth.
+
+    Returns:
+        offspring ():
+    """
+    offspring = copy.deepcopy(tree)
+
+    # Determine whether mutation occurs.
+    if random.random() >= mutation_probability:
+        return offspring
+
+    # Find all numerical constant terminals.
+    constant_paths = []
+
+    for path in get_node_paths(offspring):
+        node = offspring
+
+        for index in path:
+            node = node[index]
+
+        if isinstance(node, (int, float)):
+            constant_paths.append(path)
+
+    # Fall back to subtree mutation if no constants exist.
+    if not constant_paths:
+        return subtree_mutation(offspring, 1.0, max_tree_depth)
+
+    # Select a numerical constant.
+    path = random.choice(constant_paths)
+
+    node = offspring
+    for index in path[:-1]:
+        node = node[index]
+
+    # Apply Gaussian perturbation.
+    old_value = node[path[-1]]
+    sigma = max(0.01, 0.1 * abs(old_value))
+
+    node[path[-1]] = round(
+        old_value + random.gauss(0, sigma), 5
+    )
+
+    return offspring
+
 def test_subtree_mutation():
     """
     Purpose: test the correctness of depth-aware subtree mutation.
@@ -579,7 +634,6 @@ def survivor_selection(
     new_population = elites + offspring[:remaining]
 
     return new_population
-
 
 # ---------------------------------------------------------------------------------------------------
 # Testing
