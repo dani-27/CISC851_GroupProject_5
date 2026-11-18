@@ -2,10 +2,6 @@
 # By: Ruth Carvalho, Samuel Gallo-Will, Danisa Ivanovic-Zuvic, Daniel Jeyaraj, Nabiha Naweed
 # Last Updated: November 16, 2026
 # Purpose: define helper functions.
-
-# Statement on AI
-# GhatGPT-5.5 was used to assist with syntax and structure.
-# All ideas are original and written by the authors.
 # ---------------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------------
@@ -14,6 +10,9 @@ import pandas as pd
 import numpy as np
 import random
 import copy
+from pathlib import Path
+from dataclasses import dataclass
+from scripts.config import GPConfig
 
 # ---------------------------------------------------------------------------------------------------
 # Global Variables
@@ -74,7 +73,7 @@ def evaluate_expression(tree: list, S: float) -> float:
     
     # Identify when recursion reaches a terminal node.
     if not isinstance(tree, list):
-        return S if tree == 'S' else tree
+        return S if tree == 'S' else float(tree)
 
     operator, left, right = tree
 
@@ -95,20 +94,18 @@ def evaluate_expression(tree: list, S: float) -> float:
     
     return result
 
-def evaluate_tree(tree: list) -> float:
+def evaluate_tree(tree: list, data: pd.DataFrame) -> float:
     """
     Purpose: calculate MSE between actual and predicted reaction rates (based on expression tree).
     
     Args:
         tree (list): A nested list representing an equation.
+        data (pd.DataFrame): substrate concentrations and actual reaction rates.
 
     Outputs:
         mse (float): Mean squared error.
     """
     
-    # Import kinetics data.
-    data = pd.read_csv("data/Puromycin.csv")
-
     # Extract substrate concentrations.
     concentrations = data.iloc[:, 0].to_numpy()
     # Extract reaction velocities.
@@ -122,7 +119,29 @@ def evaluate_tree(tree: list) -> float:
     # Calculate the mean squared error between actual and predicted rates.
     mse = float(np.mean((actual_rates - predicted_rates) ** 2))
 
+    # Handle cases where MSE is not finite.
+    if not np.isfinite(mse):
+        mse = float('inf')
+    
     return mse
+
+def tree_size(tree: list) -> int:
+    """
+    Purpose: calculate the number of nodes in a tree.
+    
+    Args:
+        tree (list): A nested list representing an equation.
+
+    Returns:
+        num_nodes (int): Total number of nodes in a tree.
+    """
+    
+    if not isinstance(tree, list):
+        return 1
+    
+    num_nodes = 1 + tree_size(tree[1]) + tree_size(tree[2])
+    
+    return num_nodes
 
 # ---------------------------------------------------------------------------------------------------
 # Initialization
@@ -214,22 +233,35 @@ def initialize_population(population_size: int, max_tree_depth: int) -> list:
 # ---------------------------------------------------------------------------------------------------
 # Parent Selection
 
-def tournament_selection(population: list, tournament_size: int = 3) -> list:
+def tournament_selection(
+    population: list,
+    fitness_scores: list[float],
+    tournament_size: int = 3
+) -> list:
     """
     Purpose: select a parent using tournament selection.
 
     Args:
         population (list): Population of expression trees.
+        fitness_scores (list): Fitness of each individual.
         tournament_size (int): Number of competing individuals.
 
     Outputs:
         parent (list): Individual with the lowest MSE.
     """
 
-    candidates = random.sample(population, tournament_size)
+    # Randomly select competing individuals.
+    candidates = random.sample(
+        range(len(population)), tournament_size
+    )
 
-    # Use the evaluate_tree function to find the candidate with the lowest MSE.
-    parent = min(candidates, key=evaluate_tree)
+    # Identify the individual with the lowest MSE.
+    winner_index = min(
+        candidates,
+        key=lambda i: fitness_scores[i]
+    )
+
+    parent = population[winner_index]
 
     return parent
 
@@ -512,14 +544,16 @@ def test_subtree_mutation():
 
 def survivor_selection(
     population: list,
+    fitness_scores: list[float],
     offspring: list,
-    elitism: int = 6
+    elite_count: int = 6
 ) -> list:
     """
     Purpose: perform generational survivor selection with elitism.
 
     Args:
         population (list): Current population.
+        fitness_scores (list): Fitness of current individuals.
         offspring (list): Newly generated individuals.
         elitism (int): Number of elite individuals retained.
 
@@ -527,15 +561,25 @@ def survivor_selection(
         new_population (list): Population for the next generation.
     """
 
-    # Select the best individuals from the current population.
-    ranked_population = sorted(population, key=evaluate_tree)
-    elites = copy.deepcopy(ranked_population[:elitism])
+    # Rank individuals by fitness.
+    ranked_indices = sorted(
+        range(len(population)),
+        key=lambda i: fitness_scores[i]
+    )
+
+    # Preserve the best individuals.
+    elites = [
+        copy.deepcopy(population[i])
+        for i in ranked_indices[:elite_count]
+    ]
 
     # Fill the remaining positions with offspring.
-    remaining = len(population) - elitism
+    remaining = len(population) - elite_count
+
     new_population = elites + offspring[:remaining]
 
     return new_population
+
 
 # ---------------------------------------------------------------------------------------------------
 # Testing
