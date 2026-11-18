@@ -112,7 +112,7 @@ def run_gp(config: GPConfig, seed: int = 42) -> tuple:
         # Display progress.
         if generation % 10 == 0:
             print(
-                f"Generation {generation}:"
+                f"Generation {generation} -- "
                 f"Best Fitness (Lowest MSE) = {best_fitness:.4f}"
             )
         
@@ -122,7 +122,6 @@ def run_gp(config: GPConfig, seed: int = 42) -> tuple:
         
         # Generate offspring.
         offspring = []
-        
         offspring_needed = (
             config.population_size - config.elite_count
         )
@@ -141,56 +140,49 @@ def run_gp(config: GPConfig, seed: int = 42) -> tuple:
                 tournament_size = config.tournament_size
             )
             
-            # Choose a reproductive operator.
-            probability = random.random()
+            # Perform crossover.
+            child1, child2 = subtree_crossover(
+                parent1 = parent1,
+                parent2 = parent2,
+                crossover_probability = config.crossover_probability,
+                max_tree_depth = config.max_tree_depth,
+                max_attempts = config.crossover_max_attempts
+            )
             
-            # Recombination.
-            if probability < config.crossover_probability:
-                
-                child1, child2 = subtree_crossover(
-                    parent1 = parent1,
-                    parent2 = parent2,
-                    crossover_probability = 1.0,
-                    max_tree_depth = config.max_tree_depth,
-                    max_attempts = config.crossover_max_attempts
-                )
+            # Apply subtree mutation independently to each child.
+            child1 = subtree_mutation(
+                tree = child1,
+                mutation_probability = config.mutation_probability,
+                max_tree_depth = config.max_tree_depth
+            )
+            child2 = subtree_mutation(
+                tree = child2,
+                mutation_probability = config.mutation_probability,
+                max_tree_depth = config.max_tree_depth
+            )
             
-            elif probability < (
-                config.crossover_probability + config.mutation_probability
-            ):
-                
-                if random.random() < 0.60:
-                    child1 = subtree_mutation(
-                        tree = parent1,
-                        mutation_probability = 1.0,
-                        max_tree_depth = config.max_tree_depth
-                    )
-                    child2 = subtree_mutation(
-                        tree = parent2,
-                        mutation_probability = 1.0,
-                        max_tree_depth = config.max_tree_depth
-                    )
-                else:
-                    child1 = constant_mutation(
-                        tree = parent1,
-                        mutation_probability = 1.0,
-                        max_tree_depth = config.max_tree_depth
-                    )
-                    child2 = constant_mutation(
-                        tree = parent2,
-                        mutation_probability = 1.0,
-                        max_tree_depth = config.max_tree_depth
-                    )
+            # Apply constant mutation independently to each child.
+            child1 = constant_mutation(
+                tree = child1,
+                mutation_probability = config.mutation_probability,
+                max_tree_depth = config.max_tree_depth
+            )
+            child2 = constant_mutation(
+                tree = child2,
+                mutation_probability = config.mutation_probability,
+                max_tree_depth = config.max_tree_depth
+            )
             
-            # Direct reproduction.
-            else:
-                child1 = copy.deepcopy(parent1)
-                child2 = copy.deepcopy(parent2)
-                
+            # Add offspring to the next generation.
             offspring.extend([child1, child2])
         
         # Survivor selection.
-        population = survivor_selection(population, fitness_scores, offspring, config.elite_count)
+        population = survivor_selection(
+            population = population,
+            fitness_scores = fitness_scores,
+            offspring = offspring,
+            elite_count = config.elite_count
+        )
     
     # Convert generation statistics to a DataFrame.
     history = pd.DataFrame(history)
