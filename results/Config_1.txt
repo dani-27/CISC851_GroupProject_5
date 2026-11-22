@@ -1,0 +1,54 @@
+============================================================
+OUTER EA EXPERIMENT: CONFIGURATION 1
+============================================================
+
+OUTER EA SETTINGS
+------------------------------------------------------------
+population_size: 10
+generations: 10
+tournament_size: 2
+crossover_probability: 0.8
+mutation_probability: 0.2
+elite_count: 2
+evaluation_runs: 1
+
+BEST GP CONFIGURATION
+------------------------------------------------------------
+population_size: 387
+generations: 353
+max_tree_depth: 6
+tournament_size: 10
+crossover_probability: 0.2204406220406967
+crossover_max_attempts: 1
+mutation_probability: 0.8094304566778266
+elite_count: 3
+
+FITNESS RESULTS
+------------------------------------------------------------
+Mean fitness: 58.138268
+Best individual run MSE: 58.138268
+
+Individual run scores:
+Run 1: 58.138268
+
+Random seeds:
+Run 1: 362120044
+
+BEST EVOLVED EQUATION
+------------------------------------------------------------
+Equation: (((((S * S) * (S / 0.38851)) + ((S * S) - (158.26716 + 1.49218))) - (((S / 0.98199) + S) / (S + (S + -0.49744)))) / ((-0.12263 / ((-0.73938 / -29.57955) + (S + S))) + -0.71354))
+Equation MSE: 58.138268
+
+OUTER EA FITNESS HISTORY
+------------------------------------------------------------
+Generation 0: 68.911192
+Generation 1: 58.138268
+Generation 2: 58.138268
+Generation 3: 58.138268
+Generation 4: 58.138268
+Generation 5: 58.138268
+Generation 6: 58.138268
+Generation 7: 58.138268
+Generation 8: 58.138268
+Generation 9: 58.138268
+Generation 10: 58.138268
